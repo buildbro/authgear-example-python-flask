@@ -24,7 +24,7 @@ oauth.register(
     client_id=env.get("AUTHGEAR_CLIENT_ID"),
     client_secret=env.get("AUTHGEAR_CLIENT_SECRET"),
     client_kwargs={
-        "scope": "openid",
+        "scope": "openid offline_access",
     },
     server_metadata_url=f'https://{env.get("AUTHGEAR_DOMAIN")}/.well-known/openid-configuration',
 )

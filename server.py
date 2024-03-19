@@ -3,11 +3,11 @@
 
 import json
 from os import environ as env
-from urllib.parse import quote_plus, urlencode
 
 from authlib.integrations.flask_client import OAuth
 from dotenv import find_dotenv, load_dotenv
 from flask import Flask, redirect, render_template, session, url_for
+from datetime import datetime
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -15,18 +15,18 @@ if ENV_FILE:
 
 app = Flask(__name__)
 app.secret_key = env.get("APP_SECRET_KEY")
+app.config.from_object('config')
 
 
 oauth = OAuth(app)
 
 oauth.register(
     "authgear",
-    client_id=env.get("AUTHGEAR_CLIENT_ID"),
-    client_secret=env.get("AUTHGEAR_CLIENT_SECRET"),
     client_kwargs={
-        "scope": "openid",
+        "scope": "openid offline_access",
+        "grant_type": "authorization_code"
     },
-    server_metadata_url=f'https://{env.get("AUTHGEAR_DOMAIN")}/.well-known/openid-configuration',
+    server_metadata_url=f'{env.get("AUTHGEAR_DOMAIN")}/.well-known/openid-configuration',
 )
 
 
@@ -38,10 +38,16 @@ def home():
         pretty=json.dumps(session.get("user"), indent=4),
     )
 
+@app.route("/user")
+def user():
+    response = oauth.authgear.get(env.get("AUTHGEAR_DOMAIN") + "/oauth2/userinfo", token=session.get("user"))
+    profile = response.json()
+    return json.dumps(profile, indent=4)
+
 
 @app.route("/callback", methods=["GET", "POST"])
 def callback():
-    token = oauth.authgear.authorize_access_token()
+    token = oauth.authgear.authorize_access_token(client_id=env.get("AUTHGEAR_CLIENT_ID"), client_secret=env.get("AUTHGEAR_CLIENT_SECRET"))
     session["user"] = token
     return redirect("/")
 
@@ -56,9 +62,7 @@ def login():
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect(
-        "https://"
-        + env.get("AUTHGEAR_DOMAIN")
+    return redirect(env.get("AUTHGEAR_DOMAIN")
         + "/oauth2/end_session"
     )
 

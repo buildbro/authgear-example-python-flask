@@ -6,6 +6,7 @@
   <body>
     {% if session %}
     <h1>Welcome {{session.userinfo.name}}!</h1>
+    <p><a href="/user" id="qsUserBtn">Get UserInfo</a></p>
     <p><a href="/logout" id="qsLogoutBtn">Logout</a></p>
     <div><pre>{{pretty}}</pre></div>
     {% else %}
